@@ -91,7 +91,7 @@ Initiates a video download task from the specified URL.
   - `url` (required): The URL of the video to be downloaded.
   - `video_format` (optional): The [format](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection) of the video. Default is "bestvideo".
   - `audio_format` (optional): The [format](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection) of the audio. Default is "bestaudio". To download video without audio, set this to `null` or `none`.
-  - `output_format` (optional): The output container format (mp4, mkv, webm, mov, avi, etc.). Default is "mp4".
+  - `output_format` (optional): The output container format (mp4, mkv, webm, etc.). Default is "mp4".
   - `start_time` (optional): Starting point for video fragment in HH:MM:SS format or seconds as number.
   - `end_time` (optional): Ending point for video fragment in HH:MM:SS format or seconds as number.
   - `force_keyframes` (optional): If true, ensures precise cutting but slower processing. If false, faster but less precise cutting. Default is false.
@@ -127,7 +127,7 @@ Initiates an audio download task from the specified URL.
 - **Parameters:**
   - `url` (required): The URL of the audio to be downloaded.
   - `audio_format` (optional): The [format](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection) of the audio. Default is "bestaudio".
-  - `output_format` (optional): The output audio format (mp3, m4a, opus, flac, wav, etc.). Default is original format.
+  - `output_format` (optional): The output audio format (mp3, m4a, opus, etc.). Default is original format.
   - `start_time` (optional): Starting point for audio fragment in HH:MM:SS format or seconds as number.
   - `end_time` (optional): Ending point for audio fragment in HH:MM:SS format or seconds as number.
   - `force_keyframes` (optional): If true, ensures precise cutting but slower processing. If false, faster but less precise cutting. Default is false.
@@ -198,7 +198,7 @@ Initiates a live audio download task from the specified URL.
 - **Parameters:**
   - `url` (required): The URL of the live stream to be downloaded.
   - `audio_format` (optional): The [format](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection) of the audio. Default is "bestaudio".
-  - `output_format` (optional): The output audio format (mp3, m4a, opus, flac, wav, etc.). Default is original format.
+  - `output_format` (optional): The output audio format (mp3, m4a, opus, etc.). Default is original format.
   - `start` (optional): The starting point in seconds for the stream recording. Default is 0.
   - `duration` (required): The length of the recording in seconds from the start point.
 - **Permissions:** Requires the `get_live_audio` permission.
@@ -606,18 +606,12 @@ if status_response.json()['status'] == 'completed':
 - **mp4** - MPEG-4 Part 14 (recommended)
 - **mkv** - Matroska
 - **webm** - WebM
-- **avi** - Audio Video Interleave
-- **mov** - QuickTime File Format
-- **flv** - Flash Video
 
 ### Audio Formats
 - **mp3** - MPEG Audio Layer III
 - **m4a** - MPEG-4 Audio
 - **opus** - Opus Audio
-- **flac** - Free Lossless Audio Codec
-- **wav** - Waveform Audio File Format
 - **aac** - Advanced Audio Coding
-- **ogg** - Ogg Vorbis
 
 ## Contributing
 
