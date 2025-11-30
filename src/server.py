@@ -2,13 +2,14 @@ import os
 import json
 import random
 import string
-from flask import Flask, request, jsonify, send_from_directory
-
+import yt_dlp
+import shutil
+from threading import Timer
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from src.storage import Storage
 from src.auth import auth_manager, memory_manager, require_permission, AuthManager
 from src.models import Task, TaskStatus, TaskType
 from config import storage
-
 from src import yt_handler
 
 app = Flask(__name__)
@@ -208,6 +209,106 @@ def check_permissions():
     if set(required).issubset(current):
         return jsonify({'message': 'Permissions granted'}), 200
     return jsonify({'message': 'Insufficient permissions'}), 403
+
+def schedule_cleanup(path: str, delay_seconds: int = 300):
+    """Delete path after delay"""
+    def do_cleanup():
+        shutil.rmtree(path, ignore_errors=True)
+    Timer(delay_seconds, do_cleanup).start()
+
+
+@app.route('/download', methods=['POST'])
+@require_permission('get_video')
+def download_sync():
+    """Synchronous download - blocks until complete, returns file directly"""
+    data = request.json or {}
+    
+    if not data.get('url'):
+        return jsonify({'error': 'URL is required'}), 400
+    
+    api_key = request.headers.get('X-API-Key')
+    task_id = generate_task_id()
+    download_path = os.path.join(storage.DOWNLOAD_DIR, task_id)
+    
+    try:
+        # Estimate size and check quota
+        is_video = data.get('type', 'video') == 'video'
+        video_format = data.get('video_format', 'bestvideo[height<=1080]') if is_video else None
+        audio_format = data.get('audio_format', 'bestaudio')
+        
+        total_size = yt_handler.downloader.estimate_size(
+            data['url'],
+            video_format,
+            audio_format if is_video else data.get('audio_format', 'bestaudio')
+        )
+        
+        if total_size > 0:
+            memory_manager.check_and_update_quota(api_key, total_size, task_id)
+        
+        # Download to temp directory
+        os.makedirs(download_path, exist_ok=True)
+        
+        # Build yt-dlp options
+        output_format = data.get('output_format', 'mp4' if is_video else 'mp3')
+        
+        if is_video:
+            if audio_format and str(audio_format).lower() not in ['none', 'null']:
+                format_option = f"{video_format}+{audio_format}/best"
+            else:
+                format_option = f"{video_format}/bestvideo"
+            output_name = 'video.%(ext)s'
+        else:
+            format_option = f"{audio_format}/bestaudio"
+            output_name = 'audio.%(ext)s'
+        
+        ydl_opts = {
+            'format': format_option,
+            'outtmpl': os.path.join(download_path, output_name),
+            'extractor_args': {'youtube': {'player_client': ['default', '-tv_simply']}},
+            'quiet': True,
+            'no_warnings': True,
+        }
+        
+        if output_format:
+            if is_video:
+                ydl_opts['merge_output_format'] = output_format
+            else:
+                ydl_opts['postprocessors'] = [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': output_format,
+                }]
+        
+        # Handle time range
+        if data.get('start_time') or data.get('end_time'):
+            from yt_dlp.utils import download_range_func
+            start = yt_handler.downloader._time_to_seconds(data.get('start_time', 0))
+            end = yt_handler.downloader._time_to_seconds(data.get('end_time', 36000))
+            ydl_opts['download_ranges'] = download_range_func(None, [(start, end)])
+            ydl_opts['force_keyframes_at_cuts'] = data.get('force_keyframes', False)
+        
+        # Download
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([data['url']])
+        
+        # Find the downloaded file
+        files = os.listdir(download_path)
+        if not files:
+            raise Exception("Download failed - no file created")
+        
+        file_path = os.path.join(download_path, files[0])
+        
+        # Schedule cleanup after 5 minutes (enough time to stream large files)
+        schedule_cleanup(download_path, delay_seconds=3600)
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=files[0]
+        )
+        
+    except Exception as e:
+        shutil.rmtree(download_path, ignore_errors=True)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
