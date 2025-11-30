@@ -11,4 +11,7 @@ RUN apt update && \
 COPY . .
 
 RUN pip install gunicorn
+
+ENV PYTHONPATH=/app
+
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "src.server:app"]
