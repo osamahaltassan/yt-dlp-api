@@ -1,5 +1,6 @@
 import json
 import os
+import fcntl
 from typing import Dict, Any
 from config import storage
 
@@ -9,12 +10,17 @@ class Storage:
         if not os.path.exists(file_path):
             return {}
         with open(file_path, 'r') as f:
-            return json.load(f)
+            fcntl.flock(f.fileno(), fcntl.LOCK_SH)  # Shared lock for reads
+            data = json.load(f)
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+            return data
     
     @staticmethod
     def _save_json(file_path: str, data: Dict[str, Any]) -> None:
         with open(file_path, 'w') as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)  # Exclusive lock for writes
             json.dump(data, f, indent=4)
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
     
     @classmethod
     def load_tasks(cls) -> Dict[str, Any]:

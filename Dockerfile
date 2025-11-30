@@ -10,4 +10,5 @@ RUN apt update && \
 
 COPY . .
 
-CMD ["flask", "run"]
+RUN pip install gunicorn
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "src.server:app"]
