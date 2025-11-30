@@ -3,9 +3,9 @@ from typing import Final
 
 @dataclass
 class StorageConfig:
-    DOWNLOAD_DIR: Final[str] = '/app/downloads'
-    TASKS_FILE: Final[str] = 'jsons/tasks.json'
-    KEYS_FILE: Final[str] = 'jsons/api_keys.json'
+    DOWNLOAD_DIR: Final[str] = '/data/downloads'
+    TASKS_FILE: Final[str] = '/data/jsons/tasks.json'
+    KEYS_FILE: Final[str] = '/data/jsons/api_keys.json'
 
 @dataclass
 class TaskConfig:
