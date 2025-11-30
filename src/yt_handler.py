@@ -20,6 +20,7 @@ class YTDownloader:
     def __init__(self):
         self.executor = ThreadPoolExecutor(max_workers=task_config.MAX_WORKERS)
         self._ensure_download_dir()
+        self.last_cleanup = datetime.now()
     
     def _ensure_download_dir(self):
         os.makedirs(storage.DOWNLOAD_DIR, exist_ok=True)
@@ -292,8 +293,9 @@ class YTDownloader:
                             self.cleanup_task(task_id)
             
             # Cleanup orphaned folders every 5 minutes
-            if current_time.minute % 5 == 0 and current_time.second == 0:
+            if (current_time - self.last_cleanup).total_seconds() >= 300:
                 self._cleanup_orphaned_folders()
+                self.last_cleanup = current_time
             
             time.sleep(1)
     

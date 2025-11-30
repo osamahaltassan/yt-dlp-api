@@ -17,7 +17,7 @@ class AuthManager:
     def get_key_name(api_key: str) -> Optional[str]:
         keys = Storage.load_keys()
         for key_name, key_info in keys.items():
-            if key_info['key'] == api_key:
+            if secrets.compare_digest(key_info['key'], api_key):
                 return key_name
         return None
     
